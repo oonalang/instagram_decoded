@@ -67,9 +67,8 @@ SHOW_NATIVE = """.method public static showNative(Landroid/app/Activity;Landroid
     :loop
     invoke-interface {v7}, LX/snm;->getValue()Ljava/lang/Object;
     move-result-object v1
-    move-object v8, v1
-    check-cast v8, LX/DSA;
-    if-eqz v8, :fail
+    check-cast v1, LX/DSA
+    if-eqz v1, :fail
 
     iget-object v8, v9, Lcom/instagram/quicksnap/camera/domain/QuickSnapCameraViewModel;->A0A:Ljava/util/concurrent/atomic/AtomicReference;
     invoke-virtual {v8, p1}, Ljava/util/concurrent/atomic/AtomicReference;->set(Ljava/lang/Object;)V
