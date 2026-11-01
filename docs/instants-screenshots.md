@@ -42,6 +42,14 @@ Screenshot notifications and gallery-to-native-preview behavior are separate
 from this Android window restriction. No on-device screenshot result is claimed
 by this source patch.
 
+## Gallery selection reports "camera is not ready"
+
+The uploaded scene reads a SurfaceView field that Instagram clears during
+camera initialization. Use the scoped
+[`repair_v5_camera_size.py`](../tools/repair_v5_camera_size.py) updater to retain
+the view on the camera object and read its measured dimensions.
+[Cause, instructions and verification limits](v5-camera-size-repair.md).
+
 ## V5 build stops on missing `dispatchCaption`
 
 **For the uploaded local V5 bundle using `GalleryScene`:** use
