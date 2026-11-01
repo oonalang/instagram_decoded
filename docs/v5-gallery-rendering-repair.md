@@ -1,63 +1,63 @@
-# Local V5 gallery orientation and edge-to-edge framing
+# Local V5 gallery rendering, revision 2
 
-The selected photo was upright in the gallery but inverted in the QuickSnap
-preview. The uploaded GalleryScene creates its image filter with `8U7.A0B`.
-That helper copies `8U9.A00`, the matrix `diag(1, -1, 1, 1)`, into the model's
-texture transform. This is a vertical reflection. The gallery-specific updater
-sets this instance's texture transform to identity before publishing it to the
-camera graph. The shared helper, other image overlays and original bitmap are
-unchanged.
+Phone testing of revision 1 confirmed that the center crop removes the side
+padding, but photos remain vertically inverted. Setting the image model's
+texture transform to identity was insufficient. The earlier isolated matrix
+tests did not exercise the native overlay renderer and did not prove that the
+preview would be upright.
 
-The side gaps have a separate source: `GalleryScene.frame` uses
-`Matrix.ScaleToFit.CENTER`, which fits the entire image inside the canvas and
-leaves black padding. The updater uses a uniform scale
-`max(targetWidth / imageWidth, targetHeight / imageHeight)` and centres the
-result. Excess edges are cropped. The image fills the frame and retains its
-proportions. The measured surface dimensions and existing 1280-pixel staging
-cap remain in use.
+Revision 2 compensates for the observed vertical inversion in the staged
+bitmap, before it is supplied as the native image overlay. It keeps the V1
+model setup and uniform center crop, changing the staging draw to:
 
-Apply both changes together to the existing local source:
+- scale X by `s` and Y by `-s`, where
+  `s = max(targetWidth / imageWidth, targetHeight / imageHeight)`;
+- translate X by `(targetWidth - s * imageWidth) / 2`;
+- translate Y by `(targetHeight + s * imageHeight) / 2`.
+
+This reflects only Y. It does not rotate 180 degrees (which would also reverse
+left and right). The original gallery file is untouched. The one drawing pass
+creates the temporary JPEG with compensation, keeping the measured surface size
+and 1280-pixel staging cap. Preview and capture use the same camera graph.
+
+The native `image_overlay.manifest` describes overlay placement via
+`content_transform`. `Aca.AT5/AT6` handles texture and content matrices separately;
+changing a texture matrix alone was not enough on this device. The packaged
+native shader implementation is not available as source. This update is an
+empirical compensation for the device result, not a claim that the entire
+native orientation pipeline has been reproduced locally.
+
+Download the updated standalone tool and apply it to the existing V5 source:
 
 ```bash
-python3 tools/repair_v5_gallery_rendering.py --check ~/igbuild/instagram-v5-zip
-python3 tools/repair_v5_gallery_rendering.py ~/igbuild/instagram-v5-zip
+curl -fL https://raw.githubusercontent.com/oonalang/instagram_decoded/main/tools/repair_v5_gallery_rendering.py -o ~/igbuild/repair_v5_gallery_rendering.py &&
+python ~/igbuild/repair_v5_gallery_rendering.py ~/igbuild/instagram-v5-zip &&
 bash ~/igbuild/instagram-v5-zip/build_instants_termux.sh
 ```
 
-The standalone tool validates the native helper, matrix template and instance
-getter, then modifies only `GalleryScene.install` and `GalleryScene.frame`.
-It preserves the earlier camera-size repair and unrelated local fixes. Checks
-run before writing; unknown code causes a refusal. Backups preserve the prior
-file under `~/igbuild/instants-rendering-backups/<source-folder>/<timestamp>/`.
-Reapplication makes no changes. To revert just these two rendering corrections:
+The tool prints **Applied gallery rendering V2** when it upgrades V1. It also
+supports the original unpatched source. Checks run before writing, unknown code
+is rejected, reapplication changes nothing, and previous camera-size/local fixes
+are preserved. Backups are outside the Smali directories under
+`~/igbuild/instants-rendering-backups/<source-folder>/<timestamp>/`.
+`--check` is read-only. `--revert` removes both rendering corrections, restoring
+the original fit-center behavior; to restore V1 specifically, use its backup.
 
-```bash
-python3 tools/repair_v5_gallery_rendering.py --revert ~/igbuild/instagram-v5-zip
-```
+Validation performed:
 
-The correction is applied to the source filter shared by the camera graph;
-there is no separate preview rotation or send-time bitmap transformation.
-Native effects, captions, capture callbacks and send controls are unchanged.
+- Regression tests for V1-to-V2 migration, original-to-V2 equivalence, retries,
+  revert, local-change preservation and rejection of unknown/ambiguous snippets:
+  `python -m unittest discover -s tests`.
+- Checks against the uploaded GalleryScene with earlier size repair applied,
+  backups, check-only mode, native-code guards and both size-patch orders.
+- The updated Smali frame method was assembled, converted to JVM bytecode and
+  executed with graphics API test doubles. Ten image/target sizes retain full
+  coverage, centered crop and equal scale magnitudes. Fifty asymmetric points
+  compose correctly with the **observed** Y inversion, preserving left/right.
+- Combined gallery classes assemble to DEX and the uploaded gallery lint passes.
 
-Validation:
-
-- Native source checks confirm the helper creates a fresh per-model copy of the
-  vertical-reflection matrix and that its getter returns the instance array.
-- The original and patched Smali frame methods were assembled, converted to JVM
-  classes, and executed with graphics API test doubles. The original reproduced
-  side padding. Ten portrait, landscape, square, fractional and size-capped
-  cases checked edge coverage, equal X/Y scale and centred cropping.
-- Executing the assembled texture correction preserved five asymmetric corner
-  and interior coordinates and left a separate overlay model unchanged.
-- Patcher tests checked backups, one-file/two-method scope, local-edit
-  preservation, idempotence, revert, rejection of changed native code, and
-  compatibility with either application order of the camera-size repair.
-- The updated camera helper and six gallery/scene classes assembled together
-  into DEX. The uploaded gallery lint reports zero errors.
-
-These checks do not execute the native GPU renderer or Android ImageDecoder.
-The full APK, actual preview, camera switching, themes, caption, received photo
-and saved image still need on-device verification. Use the existing signing key
-and install the rebuilt APK as an update, then choose the original upright photo
-again. The test doubles establish the patch's arithmetic, not complete Android
-runtime success.
+These checks establish staging arithmetic and source/build compatibility. They
+cannot verify the native GPU path or the sent image. Install the rebuilt APK
+with the existing signing key, reopen Instants and select an original upright
+photo again. Confirm preview orientation, themes and saved/received orientation
+on the phone. The final on-device result remains unverified here.

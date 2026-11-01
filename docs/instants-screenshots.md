@@ -44,12 +44,12 @@ by this source patch.
 
 ## Selected photo is inverted or has side gaps
 
-The gallery source uses a vertically reflected texture matrix and fit-centre
-padding. Apply the combined
+Phone testing confirmed that revision 1 fills the frame but leaves the photo
+inverted. The updated
 [`repair_v5_gallery_rendering.py`](../tools/repair_v5_gallery_rendering.py)
-updater to the local V5 source to correct the source matrix and fill the frame
-with a uniform centred crop.
-[Cause, usage, tests and runtime limits](v5-gallery-rendering-repair.md).
+(V2) keeps the centered crop and compensates for the observed Y inversion in
+the staged image. It upgrades existing V1 patches automatically.
+[Usage, validation and remaining device checks](v5-gallery-rendering-repair.md).
 
 ## Gallery selection reports "camera is not ready"
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Correct the gallery texture orientation and fill its frame without stretching."""
+"""V2: compensate the observed overlay Y inversion and fill the gallery frame."""
 import argparse
 from datetime import datetime, timezone
 import os
@@ -17,6 +17,8 @@ HEADER = '.method private static install(' + VM + ')Z'
 CALL = '    invoke-static {v1}, LX/8U7;->A0B(Ljava/lang/String;)' + MODEL
 OLD = (CALL + '\n    move-result-object v1\n'
        '    iget-object v2, v0, LX/34o;->A05:LX/69t;')
+# Retain V1 model setup while changing the staged pixels. Its identity matrix
+# alone did not fix orientation on the device.
 FIX = ('    # Gallery source: decoded bitmap already has display orientation.\n'
        '    invoke-virtual {v1}, ' + MODEL + '->getTextureTransform()[F\n'
        '    move-result-object v3\n'
@@ -41,7 +43,7 @@ CROP_OLD = """    new-instance v2, Landroid/graphics/RectF;
     invoke-direct {v4}, Landroid/graphics/Matrix;-><init>()V
     sget-object v5, Landroid/graphics/Matrix$ScaleToFit;->CENTER:Landroid/graphics/Matrix$ScaleToFit;
     invoke-virtual {v4, v2, v3, v5}, Landroid/graphics/Matrix;->setRectToRect(Landroid/graphics/RectF;Landroid/graphics/RectF;Landroid/graphics/Matrix$ScaleToFit;)Z"""
-CROP_NEW = """    # Gallery frame: uniform scale to fill, then crop evenly at the edges.
+CROP_V1 = """    # Gallery frame: uniform scale to fill, then crop evenly at the edges.
     new-instance v4, Landroid/graphics/Matrix;
     invoke-direct {v4}, Landroid/graphics/Matrix;-><init>()V
     invoke-virtual {p0}, Landroid/graphics/Bitmap;->getWidth()I
@@ -65,6 +67,19 @@ CROP_NEW = """    # Gallery frame: uniform scale to fill, then crop evenly at th
     mul-float/2addr v5, v8
     mul-float/2addr v7, v8
     invoke-virtual {v4, v5, v7}, Landroid/graphics/Matrix;->postTranslate(FF)Z"""
+
+
+# The phone still vertically reflects the overlay with V1 installed. Compensate
+# in the one staging draw shared by preview/capture. X remains positive; a 180
+# degree rotation would also reverse left/right and is not this correction.
+CROP_NEW = CROP_V1.replace(
+    '# Gallery frame: uniform scale to fill, then crop evenly at the edges.',
+    '# Gallery rendering V2: center crop with overlay Y compensation.'
+).replace(
+    '    invoke-virtual {v4, v6, v6}, Landroid/graphics/Matrix;->setScale(FF)V',
+    '    neg-float v8, v6\n'
+    '    invoke-virtual {v4, v6, v8}, Landroid/graphics/Matrix;->setScale(FF)V'
+).replace('    sub-float/2addr v7, v3', '    add-float/2addr v7, v3')
 
 
 def require(ok, message):
@@ -124,7 +139,14 @@ def repair(text, revert=False):
     frame = method(text, '.method private static frame(Landroid/graphics/Bitmap;II)Landroid/graphics/Bitmap;')
     require(re.search(r'^\s*\.locals 9\s*$', frame, re.M) is not None,
             'Gallery frame register layout differs.')
-    return text.replace(frame, replace_block(frame, CROP_OLD, CROP_NEW, revert), 1)
+    # Migrate the already installed V1 crop as well as the original source.
+    if CROP_V1 in frame:
+        require(frame.count(CROP_V1) == 1 and CROP_NEW not in frame and CROP_OLD not in frame,
+                'Ambiguous V1 gallery frame.')
+        frame_new = frame.replace(CROP_V1, CROP_OLD if revert else CROP_NEW, 1)
+    else:
+        frame_new = replace_block(frame, CROP_OLD, CROP_NEW, revert)
+    return text.replace(frame, frame_new, 1)
 
 
 def main():
@@ -141,10 +163,10 @@ def main():
         before = source.read_bytes()
         updated = repair(before.decode(), args.revert).encode()
         if before == updated:
-            print('Already in the requested gallery rendering state; no files changed.')
+            print('Already in the requested gallery rendering V2 state; no files changed.')
             return 0
         if args.check:
-            print('Compatible: correct gallery texture orientation and use uniform center crop. No files changed.')
+            print('Compatible with gallery rendering V2: staging Y compensation and center crop. No files changed.')
             return 0
         backup = root.parent / 'instants-rendering-backups' / root.name / datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ') / REL
         backup.parent.mkdir(parents=True, exist_ok=False)
@@ -166,7 +188,7 @@ def main():
                 temporary.unlink(missing_ok=True)
         print('Backup:', backup)
         print('Gallery rendering corrections reverted.' if args.revert else
-              'Corrected gallery texture orientation and removed fit-center padding. Rebuild with the existing V5 script and signing key.')
+              'Applied gallery rendering V2: staging Y compensation with center crop. Rebuild and install with the existing V5 script/key, then select the original photo again.')
         return 0
     except (OSError, UnicodeError, ValueError) as error:
         print('ERROR:', error, file=sys.stderr)
