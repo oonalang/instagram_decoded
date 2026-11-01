@@ -41,3 +41,31 @@ selection and caption field, and check reopening the page after leaving it.
 Screenshot notifications and gallery-to-native-preview behavior are separate
 from this Android window restriction. No on-device screenshot result is claimed
 by this source patch.
+
+## V5 build stops on missing `dispatchCaption`
+
+If the gallery lint reports `InstantsGalleryEditor.onClick` calling an unresolved
+`InstantsGalleryBridge.dispatchCaption(Bitmap, String)`, the local editor and
+bridge expose different interfaces. The screenshot patch does not change either
+file. Restore the missing caption method using the standalone repair:
+
+```bash
+python3 tools/repair_v5_caption_bridge.py --check ~/igbuild/instagram-v5-zip
+python3 tools/repair_v5_caption_bridge.py ~/igbuild/instagram-v5-zip
+cd ~/igbuild/instagram-v5-zip
+bash build_instants_termux.sh
+```
+
+The repair appends the missing method using the live bridge's verified
+`dispatch(Bitmap, boolean)` callback, cleanup and error handling. It forwards the
+caption into the QuickSnap callback's caption argument, with null normalized to
+an empty string. It preserves existing methods and other local fixes. An already
+present public static caption method is left alone. Unsupported dispatch code
+causes a refusal before any edit. Backups are written outside Smali under
+`~/igbuild/instants-bridge-backups/`.
+
+Checked with the repository's V4 bridge paired with the archived V5 editor:
+compatibility, backup, repeated application, preservation of local edits and
+rejection of changed callback/parameter logic passed. The repaired bridge and
+V5 editor assembled together into DEX. The phone's full V5 build and sending
+still require on-device verification; this repair does not add native themes.
