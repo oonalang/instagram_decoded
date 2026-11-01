@@ -2012,6 +2012,8 @@
 .method public final A15()V
     .locals 3
 
+    invoke-static {p0}, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryUi;->hide(Lcom/instagram/quicksnap/camera/domain/QuickSnapCameraViewModel;)V
+
     invoke-super {p0}, LX/4Kd;->A15()V
 
     invoke-static {p0}, Lcom/instagram/quicksnap/camera/domain/QuickSnapCameraViewModel;->A09(Lcom/instagram/quicksnap/camera/domain/QuickSnapCameraViewModel;)V

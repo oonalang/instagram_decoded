@@ -2518,6 +2518,7 @@
         <activity android:exported="false" android:name="app.morphe.extension.instagram.settings.preference.fragments.RestorePrefActivity"/>
         <activity android:exported="false" android:name="app.morphe.extension.crimera.downloader.FolderPickerActivity"/>
         <activity android:excludeFromRecents="true" android:exported="true" android:name="app.morphe.extension.instagram.settings.SettingsShortcutActivity" android:noHistory="true" android:theme="@android:style/Theme.NoDisplay"/>
+            <activity android:name="app.morphe.extension.instagram.patches.instants.InstantsGalleryPickerActivity" android:exported="false" android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
     </application>
     <queries>
         <intent>

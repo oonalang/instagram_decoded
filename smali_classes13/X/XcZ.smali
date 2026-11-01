@@ -7024,6 +7024,10 @@
 
     check-cast v6, Lcom/instagram/quicksnap/camera/domain/QuickSnapCameraViewModel;
 
+    move-object/from16 v0, v40
+
+    invoke-static {v0, v6}, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryUi;->install(Landroid/content/Context;Lcom/instagram/quicksnap/camera/domain/QuickSnapCameraViewModel;)V
+
     const/high16 v1, 0xe000000
 
     and-int/2addr v1, v5
