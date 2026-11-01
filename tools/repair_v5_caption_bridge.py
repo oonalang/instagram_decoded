@@ -23,6 +23,8 @@ def require(condition, message):
 
 
 def repair(text, editor):
+    require('GalleryScene;->select(' not in text,
+            'This bridge uses GalleryScene. Use tools/repair_v5_scene_build.py to archive the unused legacy editor and update build checks')
     require(text.count(".class public final " + PKG + "Bridge;") == 1,
             "Expected InstantsGalleryBridge class is missing or ambiguous")
     require(PKG + "Bridge;->" + NEW in editor,

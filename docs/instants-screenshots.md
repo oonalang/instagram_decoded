@@ -44,10 +44,16 @@ by this source patch.
 
 ## V5 build stops on missing `dispatchCaption`
 
+**For the uploaded local V5 bundle using `GalleryScene`:** use
+[`tools/repair_v5_scene_build.py`](../tools/repair_v5_scene_build.py).
+The picker already uses the scene, and the unreferenced legacy editor is what
+fails lint. [Exact repair and verification](v5-scene-build-repair.md).
+
 If the gallery lint reports `InstantsGalleryEditor.onClick` calling an unresolved
 `InstantsGalleryBridge.dispatchCaption(Bitmap, String)`, the local editor and
 bridge expose different interfaces. The screenshot patch does not change either
-file. Restore the missing caption method using the standalone repair:
+file. **For an older callback-based bridge with `dispatch(Bitmap, boolean)`**,
+restore the missing caption method using the standalone repair:
 
 ```bash
 python3 tools/repair_v5_caption_bridge.py --check ~/igbuild/instagram-v5-zip
