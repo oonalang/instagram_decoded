@@ -2,6 +2,20 @@
 
 Full Apktool-decoded Instagram 451.0.0.53.80 source with the V4 QuickSnap gallery upload modification merged into the existing source tree.
 
+## QuickSnap / Instants screenshots (local V5 supported)
+
+QuickSnap's screen now clears Android's screenshot-blocking window flag. To apply
+only this change to the live `~/igbuild/instagram-v5-zip` source, use
+[`tools/enable_instants_screenshots.py`](tools/enable_instants_screenshots.py), then
+rebuild with the existing V5 build script and signing key. The patcher preserves
+local gallery fixes, backs up the changed file, and supports `--check` and
+`--revert`. [Instructions and verification limits](docs/instants-screenshots.md).
+
+Gallery images using the native camera themes and caption renderer remain an
+open task. Do not use `tools/v5_native_preview_patch.py` for that: its state
+transition displays the post-send archive peek, rather than an editable image.
+See the [native pipeline investigation](docs/native-gallery-investigation.md).
+
 ## Current working feature
 
 The Gallery icon appears below the QuickSnap flash control. Select a picture, press Done, and the selected bitmap passes to the original QuickSnap send callback. The owner reported that this flow works on an Android phone. These source changes are **V4 only**: the recent-photo thumbnail, swiping between filters, caption editing, and preview-before-send are planned enhancements, **not yet implemented**.

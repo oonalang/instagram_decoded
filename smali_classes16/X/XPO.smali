@@ -829,7 +829,8 @@
 
     const/16 v0, 0x2000
 
-    invoke-virtual {v1, v0, v0}, Landroid/view/Window;->setFlags(II)V
+    # Instants screenshots: only QuickSnapUnifiedFragment opts out of FLAG_SECURE.
+    invoke-virtual {v1, v0}, Landroid/view/Window;->clearFlags(I)V
 
     :cond_4
     invoke-virtual {p0}, LX/Q84;->getSession()Lcom/instagram/common/session/UserSession;
