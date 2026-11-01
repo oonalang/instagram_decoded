@@ -83,7 +83,10 @@ SHOW_NATIVE = """.method public static showNative(Landroid/app/Activity;Landroid
     move-result-object v8
     invoke-interface {v7, v1, v8}, LX/snm;->AcF(Ljava/lang/Object;Ljava/lang/Object;)Z
     move-result v1
-    if-nez v1, :loop
+    if-eqz v1, :loop
+    const-string v0, "InstantsGallery"
+    const-string v2, "Gallery bitmap accepted by native QuickSnap state"
+    invoke-static {v0, v2}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
     const/4 v10, 0x1
     return v10
     :try_end_0
@@ -154,13 +157,22 @@ def main() -> None:
     # 4. Add or repair the native state handoff method.
     show_header = ".method public static showNative(Landroid/app/Activity;Landroid/graphics/Bitmap;)Z"
     if show_header in z:
-        z = replace_block(z, show_header, SHOW_NATIVE)
+        z = replace_block(z, show_header, SHOW_NATIVE.rstrip())
     else:
         z = z.rstrip() + "\n\n" + SHOW_NATIVE + "\n"
 
     # 5. Picker: do not square-crop, and do not open the custom editor.
     if "InstantsGalleryBridge;->showNative" in p:
-        print("Picker already uses the native preview")
+        # Repair older installed patches as well as fresh V5 trees.
+        handoff = re.compile(
+            r"(InstantsGalleryBridge;->showNative\(Landroid/app/Activity;"
+            r"Landroid/graphics/Bitmap;\)Z\s+move-result v3\s+)"
+            r"if-(?:nez|eqz) v3, :native_failed"
+        )
+        p, count = handoff.subn(r"\g<1>if-eqz v3, :native_failed", p)
+        if count != 1:
+            die("expected one native handoff branch in picker")
+
     else:
         if "InstantsGalleryEditor;->show" not in p:
             die("picker Editor.show call not found")
@@ -198,7 +210,7 @@ def main() -> None:
             + indent
             + "move-result v3\n\n"
             + indent
-            + "if-nez v3, :native_failed\n\n"
+            + "if-eqz v3, :native_failed\n\n"
             + indent
             + "invoke-static {}, Lapp/morphe/extension/instagram/patches/instants/"
             "InstantsGalleryBridge;->cancel()V\n\n"
