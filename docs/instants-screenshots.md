@@ -42,6 +42,15 @@ Screenshot notifications and gallery-to-native-preview behavior are separate
 from this Android window restriction. No on-device screenshot result is claimed
 by this source patch.
 
+## Selected photo is inverted or has side gaps
+
+The gallery source uses a vertically reflected texture matrix and fit-centre
+padding. Apply the combined
+[`repair_v5_gallery_rendering.py`](../tools/repair_v5_gallery_rendering.py)
+updater to the local V5 source to correct the source matrix and fill the frame
+with a uniform centred crop.
+[Cause, usage, tests and runtime limits](v5-gallery-rendering-repair.md).
+
 ## Gallery selection reports "camera is not ready"
 
 The uploaded scene reads a SurfaceView field that Instagram clears during
