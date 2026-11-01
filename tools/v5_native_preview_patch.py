@@ -151,8 +151,11 @@ def main() -> None:
         )
         z = replace_block(z, ".method public static cancel()V", b)
 
-    # 4. Add the native state handoff method.
-    if "showNative(" not in z:
+    # 4. Add or repair the native state handoff method.
+    show_header = ".method public static showNative(Landroid/app/Activity;Landroid/graphics/Bitmap;)Z"
+    if show_header in z:
+        z = replace_block(z, show_header, SHOW_NATIVE)
+    else:
         z = z.rstrip() + "\n\n" + SHOW_NATIVE + "\n"
 
     # 5. Picker: do not square-crop, and do not open the custom editor.
