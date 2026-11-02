@@ -120,18 +120,23 @@
     invoke-direct {v3, v4, v5}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
     invoke-virtual {v0, v1, v3}, Landroid/view/ViewGroup;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
     sput-object v1, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryEditor;->label:Landroid/widget/TextView;
+    new-instance v2, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryEditor;
+    const/4 v3, 0x2
+    invoke-direct {v2, v3}, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryEditor;-><init>(I)V
+    invoke-virtual {v1, v2}, Landroid/view/View;->setOnClickListener(Landroid/view/View$OnClickListener;)V
 
     # preview (swipe target)
     new-instance v1, Landroid/widget/ImageView;
     invoke-direct {v1, p0}, Landroid/widget/ImageView;-><init>(Landroid/content/Context;)V
     invoke-virtual {v1, p1}, Landroid/widget/ImageView;->setImageBitmap(Landroid/graphics/Bitmap;)V
-    sget-object v2, Landroid/widget/ImageView$ScaleType;->FIT_CENTER:Landroid/widget/ImageView$ScaleType;
+    sget-object v2, Landroid/widget/ImageView$ScaleType;->MATRIX:Landroid/widget/ImageView$ScaleType;
     invoke-virtual {v1, v2}, Landroid/widget/ImageView;->setScaleType(Landroid/widget/ImageView$ScaleType;)V
-    const-string v2, "Photo preview. Swipe left or right to change filter."
+    const-string v2, "Drag photo to reposition. Pinch with two fingers to zoom. Tap filter name above to change filter."
     invoke-virtual {v1, v2}, Landroid/view/View;->setContentDescription(Ljava/lang/CharSequence;)V
-    new-instance v2, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryEditor$Touch;
-    invoke-direct {v2, p0}, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryEditor$Touch;-><init>(Landroid/content/Context;)V
+    new-instance v2, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryCropTouch;
+    invoke-direct {v2, v1, p1}, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryCropTouch;-><init>(Landroid/widget/ImageView;Landroid/graphics/Bitmap;)V
     invoke-virtual {v1, v2}, Landroid/view/View;->setOnTouchListener(Landroid/view/View$OnTouchListener;)V
+    invoke-virtual {v1, v2}, Landroid/view/View;->addOnLayoutChangeListener(Landroid/view/View$OnLayoutChangeListener;)V
     new-instance v3, Landroid/widget/LinearLayout$LayoutParams;
     const/4 v4, -0x1
     const/4 v5, 0x0
@@ -341,35 +346,26 @@
 .end method
 
 .method public static bake()Landroid/graphics/Bitmap;
-    .locals 9
+    .locals 2
+    sget-object v0, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryEditor;->preview:Landroid/widget/ImageView;
+    invoke-static {v0}, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryCropTouch;->capture(Landroid/widget/ImageView;)Landroid/graphics/Bitmap;
+    move-result-object v1
+    if-eqz v1, :fallback
+    return-object v1
+    :fallback
     sget-object v0, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryEditor;->bitmap:Landroid/graphics/Bitmap;
-    sget v1, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryEditor;->index:I
-    if-eqz v1, :original
-    invoke-static {v1}, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryEditor;->filterFor(I)Landroid/graphics/ColorMatrixColorFilter;
-    move-result-object v2
-    if-eqz v2, :original
-    invoke-virtual {v0}, Landroid/graphics/Bitmap;->getWidth()I
-    move-result v3
-    invoke-virtual {v0}, Landroid/graphics/Bitmap;->getHeight()I
-    move-result v4
-    sget-object v5, Landroid/graphics/Bitmap$Config;->ARGB_8888:Landroid/graphics/Bitmap$Config;
-    invoke-static {v3, v4, v5}, Landroid/graphics/Bitmap;->createBitmap(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;
-    move-result-object v6
-    new-instance v7, Landroid/graphics/Canvas;
-    invoke-direct {v7, v6}, Landroid/graphics/Canvas;-><init>(Landroid/graphics/Bitmap;)V
-    new-instance v8, Landroid/graphics/Paint;
-    invoke-direct {v8}, Landroid/graphics/Paint;-><init>()V
-    invoke-virtual {v8, v2}, Landroid/graphics/Paint;->setColorFilter(Landroid/graphics/ColorFilter;)Landroid/graphics/ColorFilter;
-    const/4 v3, 0x0
-    invoke-virtual {v7, v0, v3, v3, v8}, Landroid/graphics/Canvas;->drawBitmap(Landroid/graphics/Bitmap;FFLandroid/graphics/Paint;)V
-    return-object v6
-    :original
     return-object v0
 .end method
 
 .method public onClick(Landroid/view/View;)V
     .locals 4
     iget v0, p0, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryEditor;->mode:I
+    const/4 v2, 0x2
+    if-ne v0, v2, :not_filter
+    const/4 v2, 0x1
+    invoke-static {v2}, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryEditor;->step(Z)V
+    return-void
+    :not_filter
     if-eqz v0, :send
 
     # Cancel: return to QuickSnap, nothing is uploaded.
