@@ -4,6 +4,8 @@
 
 .field private static pending:LX/gAI;
 .field private static uiContext:Landroid/content/Context;
+.field private static cropW:I
+.field private static cropH:I
 
 .method public static openGallery(Landroid/content/Context;Lcom/instagram/quicksnap/camera/domain/QuickSnapCameraViewModel;)V
     .locals 5
@@ -12,6 +14,18 @@
     return-void
 
     :start
+    invoke-static {p1}, Lapp/morphe/extension/instagram/patches/instants/GalleryScene;->rememberSize(Lcom/instagram/quicksnap/camera/domain/QuickSnapCameraViewModel;)V
+    iget v0, p1, Lcom/instagram/quicksnap/camera/domain/QuickSnapCameraViewModel;->galleryWidth:I
+    iget v2, p1, Lcom/instagram/quicksnap/camera/domain/QuickSnapCameraViewModel;->galleryHeight:I
+    if-lez v0, :crop_fallback
+    if-lez v2, :crop_fallback
+    goto :crop_sizes
+    :crop_fallback
+    const/16 v0, 0x9
+    const/16 v2, 0x10
+    :crop_sizes
+    sput v0, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryBridge;->cropW:I
+    sput v2, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryBridge;->cropH:I
     const/16 v0, 0x11
     new-instance v1, LX/gAI;
     invoke-direct {v1, v0, p0, p1}, LX/gAI;-><init>(ILjava/lang/Object;Ljava/lang/Object;)V
@@ -152,4 +166,22 @@
     const-string v2, "Square crop failed; using original aspect"
     invoke-static {v1, v2, v0}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
     return-object p0
+.end method
+
+.method public static cropWidth()I
+    .locals 1
+    sget v0, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryBridge;->cropW:I
+    if-gtz v0, :return_size
+    const/16 v0, 0x9
+    :return_size
+    return v0
+.end method
+
+.method public static cropHeight()I
+    .locals 1
+    sget v0, Lapp/morphe/extension/instagram/patches/instants/InstantsGalleryBridge;->cropH:I
+    if-gtz v0, :return_size
+    const/16 v0, 0x10
+    :return_size
+    return v0
 .end method
