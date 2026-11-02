@@ -69,3 +69,34 @@ A regression checks that the crop source and runtime Smali do not request an
 orientation lock. This fixes a verified source incompatibility with the manifest;
 the phone's exact exception and the corrected UI result have not been observed
 here. If opening still fails, the new toast exposes the actual exception.
+
+## Revision 3: unresolved theme attribute
+
+The phone reached crop construction but reported `UnsupportedOperationException:
+Failed to resolve attribute ...`. Framework TextView/Button construction used the
+picker's inherited theme, which did not supply the expected resolved attributes.
+Revision 3 sets the complete platform `Theme.Black.NoTitleBar` before the picker
+Activity's `super.onCreate`, covering decor/window creation. Each crop control and
+its gesture detector receives a ContextThemeWrapper whose theme is cleared to a
+fresh Resources theme and then populated with that platform style. It does not
+inherit Instagram's unresolved theme attributes. No manifest or APK resources
+are replaced, and the orientation lock remains removed.
+
+The installer accepts the exact known revision 1 and 2 helpers by SHA-256 and
+continues to reject unrelated edits. Upgrading revision 2 modifies four files:
+the picker and the three changed crop helper classes. Scene, icon ownership and
+selected crop behavior are preserved.
+
+Validation: exact revision 2 migration and idempotence, updater regressions,
+local gallery lint, and combined 13-class DEX assembly. The Java theme factory
+was executed with minimal framework test doubles to verify that inherited
+attributes are cleared, the platform style is force-applied, and the parent
+context stays unchanged. Run this check with:
+
+```sh
+python tools/gallery_controls/test_theme.py --android-jar /path/android.jar
+```
+
+The crop geometry checks still pass. Framework test doubles do not load Android
+resource tables or execute the phone's widgets. The actual picker/crop opening
+and received photo remain on-device checks.

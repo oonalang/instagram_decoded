@@ -43,7 +43,7 @@
 
 
 # direct methods
-.method constructor <init>(Landroid/app/Activity;Landroid/graphics/Bitmap;II)V
+.method constructor <init>(Landroid/content/Context;Landroid/graphics/Bitmap;II)V
     .locals 2
 
     invoke-direct {p0, p1}, Landroid/view/View;-><init>(Landroid/content/Context;)V

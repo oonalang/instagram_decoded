@@ -1,6 +1,7 @@
 package app.morphe.extension.instagram.patches.instants;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.*;
 import android.os.*;
 import android.view.*;
@@ -9,26 +10,34 @@ import com.instagram.quicksnap.camera.domain.QuickSnapCameraViewModel;
 
 /** Edits only a staging bitmap; the gallery original is never written. */
 public final class GalleryCrop {
+    static Context cropContext(Activity activity) {
+        ContextThemeWrapper context = new ContextThemeWrapper(activity, android.R.style.Theme_Black_NoTitleBar);
+        // Start with an empty theme, rather than inheriting Instagram attributes.
+        context.getTheme().setTo(activity.getResources().newTheme());
+        context.getTheme().applyStyle(android.R.style.Theme_Black_NoTitleBar, true);
+        return context;
+    }
     public static void open(final Activity activity, Bitmap image, final QuickSnapCameraViewModel vm) {
         if (vm.galleryWidth <= 0 || vm.galleryHeight <= 0) {
             InstantsGalleryBridge.notice("Open the QuickSnap camera and choose the photo again.");
             activity.finish(); return;
         }
         // The picker uses a translucent theme; Android forbids orientation locks here.
-        LinearLayout layout = new LinearLayout(activity);
+        Context context = cropContext(activity);
+        LinearLayout layout = new LinearLayout(context);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setBackgroundColor(Color.BLACK);
-        TextView title = new TextView(activity);
+        TextView title = new TextView(context);
         title.setText("Drag to position · Pinch to zoom");
         title.setTextColor(Color.WHITE); title.setGravity(Gravity.CENTER); title.setPadding(12,24,12,12);
         layout.addView(title);
-        final CropView preview = new CropView(activity, image, vm.galleryWidth, vm.galleryHeight);
+        final CropView preview = new CropView(context, image, vm.galleryWidth, vm.galleryHeight);
         layout.addView(preview, new LinearLayout.LayoutParams(-1,0,1));
-        LinearLayout buttons = new LinearLayout(activity);
+        LinearLayout buttons = new LinearLayout(context);
         String[] labels = {"Cancel", "−", "+", "Reset", "Use photo"};
         for (int i=0;i<labels.length;i++) {
             final int action=i;
-            Button button=new Button(activity); button.setText(labels[i]);
+            Button button=new Button(context); button.setText(labels[i]);
             button.setContentDescription(i==1?"Zoom out":i==2?"Zoom in":labels[i]);
             buttons.addView(button,new LinearLayout.LayoutParams(0,-2,i==4?1.6f:1));
             button.setOnClickListener(new View.OnClickListener(){ public void onClick(View v){
@@ -60,10 +69,10 @@ public final class GalleryCrop {
         private final ScaleGestureDetector pinch;
         private float scale,base,x,y,lastX,lastY;
         private int dragId=-1;
-        CropView(Activity activity,Bitmap bitmap,int width,int height){
-            super(activity);image=bitmap;targetWidth=width;targetHeight=height;
+        CropView(Context context,Bitmap bitmap,int width,int height){
+            super(context);image=bitmap;targetWidth=width;targetHeight=height;
             setContentDescription("Photo crop. Drag in any direction or pinch to zoom.");
-            pinch=new ScaleGestureDetector(activity,new ScaleGestureDetector.SimpleOnScaleGestureListener(){
+            pinch=new ScaleGestureDetector(context,new ScaleGestureDetector.SimpleOnScaleGestureListener(){
                 @Override public boolean onScale(ScaleGestureDetector detector){
                     zoom(detector.getScaleFactor(),detector.getFocusX(),detector.getFocusY());return true;
                 }

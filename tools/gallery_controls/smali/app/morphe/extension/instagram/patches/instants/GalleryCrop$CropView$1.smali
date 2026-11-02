@@ -5,7 +5,7 @@
 
 # annotations
 .annotation system Ldalvik/annotation/EnclosingMethod;
-    value = Lapp/morphe/extension/instagram/patches/instants/GalleryCrop$CropView;-><init>(Landroid/app/Activity;Landroid/graphics/Bitmap;II)V
+    value = Lapp/morphe/extension/instagram/patches/instants/GalleryCrop$CropView;-><init>(Landroid/content/Context;Landroid/graphics/Bitmap;II)V
 .end annotation
 
 .annotation system Ldalvik/annotation/InnerClass;
