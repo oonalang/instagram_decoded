@@ -52,10 +52,6 @@
     return-void
 
     :cond_18
-    const/16 v0, 0xe
-
-    invoke-virtual {p0, v0}, Landroid/app/Activity;->setRequestedOrientation(I)V
-
     new-instance v4, Landroid/widget/LinearLayout;
 
     invoke-direct {v4, p0}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
@@ -136,10 +132,10 @@
 
     move v0, v1
 
-    :goto_75
+    :goto_70
     array-length v2, v7
 
-    if-ge v0, v2, :cond_ae
+    if-ge v0, v2, :cond_a9
 
     new-instance v8, Landroid/widget/Button;
 
@@ -149,11 +145,11 @@
 
     invoke-virtual {v8, v2}, Landroid/widget/Button;->setText(Ljava/lang/CharSequence;)V
 
-    if-ne v0, v11, :cond_a3
+    if-ne v0, v11, :cond_9e
 
     const-string v2, "Zoom out"
 
-    :goto_86
+    :goto_81
     invoke-virtual {v8, v2}, Landroid/widget/Button;->setContentDescription(Ljava/lang/CharSequence;)V
 
     new-instance v9, Landroid/widget/LinearLayout$LayoutParams;
@@ -162,11 +158,11 @@
 
     const/4 v2, 0x4
 
-    if-ne v0, v2, :cond_ac
+    if-ne v0, v2, :cond_a7
 
     const v2, 0x3fcccccd    # 1.6f
 
-    :goto_92
+    :goto_8d
     invoke-direct {v9, v1, v10, v2}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
 
     invoke-virtual {v6, v8, v9}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
@@ -179,28 +175,28 @@
 
     add-int/lit8 v0, v0, 0x1
 
-    goto :goto_75
+    goto :goto_70
 
-    :cond_a3
+    :cond_9e
     const/4 v2, 0x2
 
-    if-ne v0, v2, :cond_a9
+    if-ne v0, v2, :cond_a4
 
     const-string v2, "Zoom in"
 
-    goto :goto_86
+    goto :goto_81
 
-    :cond_a9
+    :cond_a4
     aget-object v2, v7, v0
 
-    goto :goto_86
+    goto :goto_81
 
-    :cond_ac
+    :cond_a7
     move v2, v3
 
-    goto :goto_92
+    goto :goto_8d
 
-    :cond_ae
+    :cond_a9
     invoke-virtual {v4, v6}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
 
     invoke-virtual {p0, v4}, Landroid/app/Activity;->setContentView(Landroid/view/View;)V

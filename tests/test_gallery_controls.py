@@ -9,7 +9,7 @@ class ControlsTests(unittest.TestCase):
   def put(rel,text):
    p=root/rel;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(text)
   put(m.REL/'InstantsGalleryBridge.smali','    invoke-static {p0, p1, v0}, '+m.PKG+'GalleryScene;->select(Landroid/app/Activity;Landroid/graphics/Bitmap;'+m.VM+')V')
-  put(m.REL/'InstantsGalleryPickerActivity.smali','    invoke-virtual {p0}, Landroid/app/Activity;->finish()V\n    return-void\n\n    :decode_null\n    :already_open\n    return-void')
+  put(m.REL/'InstantsGalleryPickerActivity.smali','    invoke-virtual {p0}, Landroid/app/Activity;->finish()V\n    return-void\n\n    :decode_null\n    :already_open\n    return-void\n    const-string v0, "Selected photo failed. See InstantsGallery in Logcat."')
   put(m.REL/'InstantsGalleryUi.smali','.method public static current()Landroid/widget/ImageButton;\n')
   put(m.REL/'GalleryScene.smali','.method public static select(Landroid/app/Activity;Landroid/graphics/Bitmap;'+m.VM+')V\n# retain rendering V2\n')
   put(Path('smali_classes16/X/XPO.smali'),'.field public final A0C:Landroidx/compose/runtime/MutableState;\n    invoke-super {p0, p1, p2}, LX/4Ka;->onViewCreated(Landroid/view/View;Landroid/os/Bundle;)V\n.method public final onDestroyView()V\n    .locals 4')
@@ -35,6 +35,22 @@ class ControlsTests(unittest.TestCase):
    snapshot={p:p.read_bytes() for p in root.rglob('*') if p.is_file()}
    with self.assertRaises(ValueError):m.plan(root)
    self.assertEqual(snapshot,{p:p.read_bytes() for p in root.rglob('*') if p.is_file()})
+ def test_known_prior_helper_upgrades_and_unknown_is_refused(self):
+  import hashlib
+  with tempfile.TemporaryDirectory() as temp:
+   root=Path(temp);self.fixture(root)
+   for rel,(_,after) in m.plan(root).items():m.atomic(root/rel,after)
+   crop=root/m.REL/'GalleryCrop.smali'
+   legacy=b'known legacy helper'
+   crop.write_bytes(legacy)
+   with patch.object(m,'LEGACY_CROP_SHA256',hashlib.sha256(legacy).hexdigest()):
+    changes=m.plan(root)
+    self.assertEqual({m.REL/'GalleryCrop.smali'},set(changes))
+   with self.assertRaises(ValueError):m.plan(root)
+ def test_crop_never_locks_translucent_activity_orientation(self):
+  self.assertNotIn('->setRequestedOrientation(',m.PAYLOAD['GalleryCrop.smali'])
+  source=Path(__file__).resolve().parents[1]/'tools/gallery_controls/src/app/morphe/extension/instagram/patches/instants/GalleryCrop.java'
+  self.assertNotIn('.setRequestedOrientation(',source.read_text())
  def test_payload_matches_generated_files_and_excludes_stubs(self):
   actual={p.name:p.read_text() for p in (Path(__file__).resolve().parents[1]/'tools/gallery_controls/smali').rglob('*.smali')}
   self.assertEqual(actual,m.PAYLOAD)

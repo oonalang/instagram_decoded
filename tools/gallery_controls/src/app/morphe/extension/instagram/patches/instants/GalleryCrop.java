@@ -14,7 +14,7 @@ public final class GalleryCrop {
             InstantsGalleryBridge.notice("Open the QuickSnap camera and choose the photo again.");
             activity.finish(); return;
         }
-        activity.setRequestedOrientation(14);
+        // The picker uses a translucent theme; Android forbids orientation locks here.
         LinearLayout layout = new LinearLayout(activity);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setBackgroundColor(Color.BLACK);

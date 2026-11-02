@@ -49,3 +49,23 @@ signing setup. After installing the update, verify camera → viewer → camera,
 leaving QuickSnap entirely, cancel/apply, pinch/drag, and the received image.
 Touch feel and native effects/send remain phone checks. Activity recreation
 cancels the crop safely; it does not restore unsaved crop edits.
+
+## Revision 2: crop opening failure
+
+The picker is declared with `Theme.Translucent.NoTitleBar`. Revision 1 requested
+`SCREEN_ORIENTATION_LOCKED` when opening the crop. Android can reject orientation
+requests from translucent activities with `IllegalStateException: Only fullscreen
+opaque activities can request orientation`. Revision 2 removes that request.
+
+The same standalone installer upgrades the known revision 1 helper (verified by
+SHA-256), preserving all existing controls and scene fixes. It also changes the
+picker error toast to show `Throwable.toString()`; the full trace is still logged.
+Unknown helper changes continue to cause a refusal before writing. On a previously
+installed revision 1 tree, only GalleryCrop and the picker change.
+
+Validation includes migration from the exact revision 1 helper, repeat application,
+read-only checks, the existing gallery lint and combined 13-class DEX assembly.
+A regression checks that the crop source and runtime Smali do not request an
+orientation lock. This fixes a verified source incompatibility with the manifest;
+the phone's exact exception and the corrected UI result have not been observed
+here. If opening still fails, the new toast exposes the actual exception.

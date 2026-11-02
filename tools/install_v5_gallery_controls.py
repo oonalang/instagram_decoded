@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Add gallery drag/pinch crop and scope the thumbnail to QuickSnap camera mode."""
-import argparse, base64, gzip, json, os, re, sys, tempfile
+import argparse, base64, gzip, hashlib, json, os, re, sys, tempfile
 from pathlib import Path
 from datetime import datetime, timezone
 REL=Path('smali_classes24/app/morphe/extension/instagram/patches/instants')
 PKG='Lapp/morphe/extension/instagram/patches/instants/'
 VM='Lcom/instagram/quicksnap/camera/domain/QuickSnapCameraViewModel;'
+LEGACY_CROP_SHA256='3e5a78f04c4e4867a239e8257697b376f950401af301e3562e37a011cac80b5c'
 PAYLOAD=json.loads(gzip.decompress(base64.b64decode(
 'H4sIAAAAAAACA+09a2/buJZ/RcjNBxcbx3r4VWc3wDQddw20k2zTe6ftBigYibZ1K0uqJDvJFPnvS1KyRFEkJduS7cw2QB+xJfLw'
 '8LzP4eHPk3fAcWDwdBV4/ql2Hi6AY5+MlJNz0wFhqLwHvt9ZeIE/hx34GEE3tD23Y7thBGYBWHR8EJlzGMafuFHYyQ13ceeeh0sf'
@@ -58,22 +59,21 @@ PAYLOAD=json.loads(gzip.decompress(base64.b64decode(
 'Tewng6FU+vIOTjZ8VJ4qOcKTyHNXOg2Z7M1GCkIe99eSiVmbUf1AMPWmlrzJaEqtOU25DzfrBRWC0WetDHnf/Oba5VNd8gtXmDfW'
 'JP8DXNwnDekh2yP/Z/wr/qnrGgA81rOwj72os3mCYk6Dc/HNKE3cDM/Ak6gOz4fuIa5Fo9et6QXjsJ+vvOPEscrqhfCDPfygWbQ8'
 '8wcCBRZpZkXhooAdl4xcqJim2JoU1rKdNjt9oaSjUIo2zNuUU2Ff7GtEOUo0h0o6qxJDg3jDUsy554WQfE8u+Dq6u73kQld8n13O'
-'Ih+UWeRDliRJrRus3h6cASSE0ce47hJa14EN3VgGVatleMDYiTrvbReC4D148paRuJ4h7dIteXmTyxL4SQytfAq0ZMFKC1WEFSpE'
-'uiyChZO+Aeb3GalJKikXUYujfUJrl10cFVsvz5IXN0Ftnjl1zJykUT3iOt8LbaJE7+6Wqno/UG7oRvXiPvXF6qQigAhH+LcK/em5'
-'o/crjV7AfcZKxCXUtB2X8C4AmLdkUwylU/SSAyL4317pdDfImEbblLY32o1M0WB46BbHWBRRa+9Mqf8i7ub1ZOoJNaoNGS5N8st+'
-'HTfR1nmLYUUpRBPLafzPDUAwhjKxFNeJsZ3ISkfM7miZjEvourczbRc/eocEtZ+HSISo/pYasV+3Rsy3rejR0IIgAE9JidiZ8r9F'
-'O0Z2zSpeppOJdsDcEEFG1SQDIFWh68gmLxlB469Dl2il/xCMqZ8x5XD5IQ3JkB9xAny7YbuSYf8ZJnZr1aF559uJjTjoJa/jLUXG'
-'vjuL5sn7tBGevJyenAeQT73DIgG+WUZRsdVpSrdDAd0mr21CsYAplc6joMDsQ4ECTmfewIKIj28R/KaHvoCMML4i+yZ/4CXej2F/'
-'B2hruJ3n9TZyOnNRYyu36DDrOYqm0JVRlMk0DNZjN9rEP9baje5PmeoKnU9VrxMtoYmsrJ1VBdZDeE9eH05V6DtfsS5iSv0sjWAS'
-'K2Nny4K6B2kisinqMFzqiP3swIDX7pWDRl5fhMTZ8VPmEVp8WRY+5Nhx7GiYZhmpQBAVSB30mCIig8dvupTfXpdJJ9vNhBM195A5'
-'lgpeV5G+sgFMWkfl2n7TaWOdeQtKbLh+Tb4JNwDSlQdAEiFcPjheFnbjsmCNKDY+MfGVyZ4PmwmQp8NvGCXPwMpC5fjC1OScLg4y'
-'k5ulFwgdISdj8CmA8Po+hMEK4qvEbgKI73ug7oGvdgNrvPhpAGZ4otH7z53PN9fia0oDz4tG3LtySwLlySi8q0DjKQW7XW8Mvc5r'
-'ybONb1/y8Ff3VY70fLJt2C5X8IBn3WAvNrnLOjvTzhIu73Q7/X21dl61XXNI87LkgsO0jd/uG1mJB2QXenORnUMhkdYFAdHaWKLU'
-'eYV9MnarvO2jzk/n5LtBMvmGGrIN/7RxLncZMC0YEm04wZV4jGvGo1CDrQZK21MYoImKwUoiiZmP8Ev8SPvyN9UY7WoFSk9W17Et'
-'3oMbtna2Vb+WFOEkO6YdwY5xCzrXW2aHHxHsC9y/c+Ml3Te9pDI9Ja9VZZTHn7ZreQ+f0AsuxZIeIpI3Nm4tImXFQ2JhS1a8SjH3'
-'2EHU7nsh7ARLN7IXsPNhGYF7B5LuHReSXi80PktGiRU0rrBA2OVYsBVwW7jo53PnaxiSxeij5BfGrdLiMznsVsTuTK4sKWkwMxVt'
-'o5V/UNR7khv7pgV6YqiE9r3t4ORRaVV03LIoySMUhAX3IFIpCGEOhAnbGcoA+UaijHtn3LNY5LmS+pR5y+ImtIecVzFy8/7W8/8B'
-'5pKdJj2oAAA='
+'Ih+UWeTDsvqCBwxx1HlvuxAE78GTt4zENQZp52zJy5tcYMBPLGjlU4Qwug5sNCiRgHQlRaGyr0LVRpdNZQgnfQPM7zNSJ1RSwqEW'
+'R/uE1i67zCm2KJ4lL26C2jzD6JhhSPN4xAm+F9pEsd3dLVX1fqDc0M3jxb3jixVDRQARjvBvFXrGc0fvVxq9gPtM4hI3TdN2XMK7'
+'AGDGk00xlE7RSw5t4H97pdPdIAMXbVPacmg3MkWD4aFbHANORK29M6X+y7Gb112pd9KohmK4NMn5+nXcDlvnzYIVpRBNLKfxPzcA'
+'wRjKxFJcu8V2BysdMbs3ZTIuoevezrRd/OgdEtR+HiIRovpbasR+3Rox30qiR0MLggA8JWVbZ8r/Fm0L2dWneJlOJtoBc2sDGVWT'
+'DIBUha4jO7lkBI2/Dl2ilf5DMKZ+xpSo5Yc0JEN+xEnp7YbtSob9Z5jYklWH5p05J3bb+vZasqXIAHdn0Tx5nzaMk5fT0+zgNZ96'
+'h0UCfLOMomL70ZRuhwK6TV7bhGIBU76cR0GB2YcCBZzOvIEFER+pIvhND2K9hpId/Irsm/whlHg/htoO0NZwY87rbeR05jbGVm7R'
+'idVzFE2hK6OoAdPEV49dWxP/WGvXtj9l0GXxqep1oiU0kZW1s6rAegjvyevDqQp952vPRUypn6VRRWJl7GxZUHcTTUQ2RR2GS4PX'
+'1FdhwGv3ykEjry8n4uz4KfMILb4sCx887Dh2NEwzf1RwhgpuDpjDZFjUFPlNl/Jbt0w62W4mnKi5h0zXEtCtIn1lAwxoHZVrxU2/'
+'xdYyvZbYcP2afBPunWVdSXQkE8Llg+NlYTcuC6CI4tUTE19j7PmwmaB1OvyGkesMrCx8jS8xTc7O4sAvue15gdARcqL4nwIIr+9D'
+'GKwgvt7rJoD4DgbqbvZqt6LGi58GYIYnGr3/3Pl8cy2+OjTwvGjEvb+2JHidjMK7njOeUrDb9ca167wqPNv49iUPf3Vfr0jPJ9uG'
+'7eL3D3jWDfZik/uls3PmLOHyTpzT31drsVXb1YM0L0suHUxb6+2+kZV4QHbJNhfZORQSaV0QEK2NJUqd18onY7fKWzHq/BRLvkMj'
+'kwOoIQPwTxvnV5cB0xYh0YYTXB3HuGY8CjXYCp20ZYQBmqjiqySSmPkIv8SPtC9/U43Rrlag9LRzHdviPbhha2db9WtJYUyyY9oR'
+'7Bi3yHK9ZXb4EcG+wD01N17SfdNLKtNT8vpRRnn8abuW9/AJveBSLOkhInlj43YfUlY8JBa2ZMWrFHOPHUTtvhfCTrB0I3sBOx+W'
+'Ebh3IOmocSHpv0Ljs2SUWEHjqgeEXY4FWwG3hct3Pne+hiFZjD5KfmHcKi0+J8NuRezO5EqFkqYvU9E2WvkHRf0gubFvWqAnhkpo'
+'39sOTh6VVirHbYSSPEJBWHAPB5WCEOZAmLDdmgyQb+6pM1/fs1jkuZL6lHnLYlNkRMsOOa9i5Ob9ref/Aykt5ADRpwAA'
 )))
 
 def require(ok,message):
@@ -103,6 +103,10 @@ def plan(root):
     update_again=REL/'InstantsGalleryPickerActivity.smali'
     before,after=changes.get(update_again,((root/update_again).read_bytes(),(root/update_again).read_bytes()))
     updated=replace(after.decode(),old,'    :already_open\n    invoke-static {}, '+PKG+'InstantsGalleryBridge;->cancel()V\n    invoke-virtual {p0}, Landroid/app/Activity;->finish()V\n    return-void').encode()
+    # Include the actual exception in the existing picker error toast.
+    old_error='    const-string v0, "Selected photo failed. See InstantsGallery in Logcat."'
+    new_error='    invoke-virtual {v6}, Ljava/lang/Throwable;->toString()Ljava/lang/String;\n    move-result-object v0'
+    updated=replace(updated.decode(),old_error,new_error).encode()
     if before!=updated:changes[update_again]=(before,updated)
     fragment=Path('smali_classes16/X/XPO.smali')
     text=(root/fragment).read_text()
@@ -126,7 +130,7 @@ def plan(root):
     for name,content in PAYLOAD.items():
         rel=REL/name;path=root/rel;before=path.read_bytes() if path.exists() else None
         after=content.encode()
-        require(before is None or before==after,'A different crop helper already exists: '+name)
+        require(before is None or before==after or (name=='GalleryCrop.smali' and hashlib.sha256(before).hexdigest()==LEGACY_CROP_SHA256),'A different crop helper already exists: '+name)
         if before!=after:changes[rel]=(before,after)
     build=Path('build_instants_termux.sh')
     old='"$SOURCE_DIR/smali_classes24/app/morphe/extension/instagram/patches/instants/GalleryScene.smali" || fail "Smali lint failed."'
@@ -173,7 +177,7 @@ def main():
                 else:atomic(root/rel,before)
             raise
         print('Backup:',backup)
-        print('Installed camera-only gallery icon and drag/pinch crop preview. Rebuild with your existing V5 script/key.')
+        print('Installed gallery controls revision 2 (translucent picker fix). Rebuild with your existing V5 script/key.')
         return 0
     except (OSError,ValueError,UnicodeError) as error:
         print('ERROR:',error,file=sys.stderr);return 1
