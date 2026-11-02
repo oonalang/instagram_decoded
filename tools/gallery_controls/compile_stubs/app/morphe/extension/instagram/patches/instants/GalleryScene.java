@@ -1,0 +1,1 @@
+package app.morphe.extension.instagram.patches.instants; public class GalleryScene {public static void select(android.app.Activity a,android.graphics.Bitmap b,com.instagram.quicksnap.camera.domain.QuickSnapCameraViewModel v){}}

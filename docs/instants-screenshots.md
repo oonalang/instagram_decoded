@@ -92,3 +92,8 @@ compatibility, backup, repeated application, preservation of local edits and
 rejection of changed callback/parameter logic passed. The repaired bridge and
 V5 editor assembled together into DEX. The phone's full V5 build and sending
 still require on-device verification; this repair does not add native themes.
+
+## Thumbnail visibility and crop controls
+
+Use the [V5 gallery controls updater](v5-gallery-controls.md) for a thumbnail
+scoped to camera mode and a drag/pinch crop preview before loading the photo.

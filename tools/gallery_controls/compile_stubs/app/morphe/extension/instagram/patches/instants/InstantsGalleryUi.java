@@ -1,0 +1,1 @@
+package app.morphe.extension.instagram.patches.instants; public class InstantsGalleryUi {public static boolean owns(com.instagram.quicksnap.camera.domain.QuickSnapCameraViewModel vm){return false;} public static android.widget.ImageButton current(){return null;}}
